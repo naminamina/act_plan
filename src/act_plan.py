@@ -7,6 +7,9 @@ from happymimi_navigation.srv import NaviLocation, NaviCoord
 from happymimi_voice_msgs.srv import TTS, YesNo, ActionPlan
 from happymimi_msgs.srv import SetStr
 import time
+import socketio
+
+sio = socketio.Client()
 
 
 
@@ -63,9 +66,26 @@ class TaskFunction():
     def Stt(self):
         ans = self.tts_srv(SetStrRequest()).result
 
+task_function = TaskFunction()
+
+
+@sio.on('command')
+def on_command(data):
+    print(f"[SocketIO] Received command: {data}")
+    task = data['command']
+    args = data['arguments']
+    
+    if task == "Navigation":
+        task_function.Navigation(args)
+    elif task == "Text2Speech":
+        task_function.Text2Speech(args)
+    else:
+        print(f"Unknown task: {task}")
+
+def main():
+    sio.connect(MIMIBASE_URL)
+    print("hello connected")
+    sio.wait()
 
 if __name__ == '__main__':
-    while True:
-
-        main()
-        time.sleep(60)
+    main()
