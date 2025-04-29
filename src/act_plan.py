@@ -4,6 +4,7 @@ import sys
 import rospy
 import roslib
 import requests
+from std_msgs.msg import String
 from happymimi_navigation.srv import NaviLocation, NaviCoord
 from happymimi_voice_msgs.srv import TTS, YesNo, ActionPlan,SetStrRequest
 from happymimi_msgs.srv import StrTrg, StrTrgRequest,SetStr
@@ -22,6 +23,7 @@ from base_control import BaseControl
 
 
 MIMIBASE_URL = os.getenv('MIMIBASE_URL')
+MIMIBASE_WS = MIMIBASE_URL.replace("https", "wss") + "/ws"
 MIMIBASE_URL_GET = f"{MIMIBASE_URL}/get_command"
 
 def get_command():
@@ -64,9 +66,12 @@ class TaskFunction():
 
 
     def Navigation(self, place):
+        print(f"Navigaton args:{place}")
         self.navi(place)
 
     def Text2Speech(self,text):
+        print(f"Text2Speech args:{text}")
+
         self.tts_srv(text)
 
     def ArmPose(self, pose):
@@ -103,23 +108,50 @@ class TaskFunction():
 task_function = TaskFunction()
 
 
-@sio.on('command')
-def on_command(data):
-    print(f"[SocketIO] Received command: {data}")
-    task = data['command']
-    args = data['arguments']
-    
-    if task == "Navigation":
-        task_function.Navigation(args)
-    elif task == "Text2Speech":
-        task_function.Text2Speech(args)
-    else:
-        print(f"Unknown task: {task}")
+def on_message(ws, message):
+    print(message)
+    data = json.loads(message)
+    print(data)
+    try:
+        data = json.loads(message)
+        task = data.get("command")
+        args = data.get("arguments")
+
+        print(f"data:{data},task:{task},args:{args}")
+        if str(task) == "Move":
+            print("task : Navigation")
+            task_function.Navigation(args)
+
+        elif task == "Text2Speech":
+            print("task : Text2Speech")
+            task_function.Text2Speech(args)
+        else:
+            print("no task")
+    except Exception as e:
+        print(f"error:{e}")
+
+
+def on_open(ws):
+    print("Connected")
+
+
+def on_error(ws, error):
+    print(f"Error: {error}")
+
+
+def on_close(ws, close_status_code, close_msg):
+    print("Closed")
 
 def main():
-    sio.connect(MIMIBASE_URL)
-    print("hello connected")
-    sio.wait()
+    print("connect")
+    ws = websocket.WebSocketApp(
+        MIMIBASE_WS,
+        on_open=on_open,
+        on_message=on_message,
+        on_error=on_error,
+        on_close=on_close
+    )
+    ws.run_forever()
 
 if __name__ == '__main__':
     main()
