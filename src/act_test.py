@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-# coding: utf-8import os
+
+import os
 import sys
 import rospy
 import roslib
 import requests
 from happymimi_navigation.srv import NaviLocation, NaviCoord
-from happymimi_voice_msgs.srv import TTS, YesNo, ActionPlan,SetStrRequest
-from happymimi_msgs.srv import StrTrg, StrTrgRequest,SetStr
+from happymimi_voice_msgs.srv import TTS, YesNo, ActionPlan
+from happymimi_msgs.srv import StrTrg, StrTrgRequest,SetStr,SetStrRequest
 from std_msgs.msg import Bool, Float64, String
 
 import time
